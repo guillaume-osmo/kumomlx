@@ -1,6 +1,8 @@
 ---
 title: "Ipc is the Hosoya index: a numerically stable, size-free reformulation of molecular information content"
-author: "Guillaume Godin"
+author:
+  - Claude Opus 5 (Anthropic)
+  - Guillaume Godin
 date: "2026-10-01"
 geometry: margin=2.4cm
 fontsize: 10pt
