@@ -21,9 +21,10 @@ abstract: |
   $n$-alkane of equal size, whose correlation with atom count is $+0.049$ against $+0.993$ for
   $\log_2 Z$. The upper reference $Z_{\max}$ over chemical graphs is determined exhaustively to
   $n=16$, by local search to $n=24$, and by a fitted law accurate to $0.022$ bits thereafter.
-  Applied to 6,000 structurally defined terpenes from COCONUT against skeleton-size-matched
-  natural products from other pathways, terpene carbon skeletons occupy one fifth of the
-  topological variance (ratio 5.02, Cohen's $d=-1.17$), consistently across skeleton sizes.
+  Applied to 6,000 structurally defined terpenes from COCONUT, spanning C10 to C40, against
+  skeleton-size-matched natural products from other pathways, terpene carbon skeletons occupy a
+  quarter of the topological variance (ratio 4.07, Cohen's $d=-1.16$), consistently across
+  skeleton sizes.
 ---
 
 # Introduction
@@ -74,8 +75,8 @@ and we use a fitted law bracketed by an explicit construction below and a densit
 not of the decorated molecule: enzymes add oxidation, epoxidation, acetylation and
 glycosylation after the skeleton is assembled. We therefore extract the carbon framework —
 deleting all non-carbon atoms and retaining the largest connected carbon fragment — and require
-it to satisfy the isoprene rule: a skeleton of 10, 15, 20, 25, 30 or 40 carbons carrying at
-least $C/5 - 1$ pendant methyl carbons. This is a structural criterion, independent of the
+it to satisfy the isoprene rule: a skeleton of 10, 15, 20, 25, 30 or 40 carbons — mono- through
+tetraterpene (carotenoid) — carrying at least $C/5 - 1$ pendant methyl carbons. This is a structural criterion, independent of the
 classifier, and dIpc is computed on the skeleton rather than on the parent molecule.
 
 Controls are single-pathway non-terpenoids, matched one-for-one on skeleton carbon count. They
@@ -165,29 +166,35 @@ The density is maximal at $K_{4,4}$ and the sequence shows period-8 structure: a
 4-regular graph cannot attain the density of disjoint $K_{4,4}$ blocks, as joining two blocks
 costs 0.0416 bits.
 
-## Terpene skeletons occupy a fifth of the topological variance of other pathways
+## Terpene skeletons occupy a quarter of the topological variance of other pathways
 
 ![**Left:** dIpc of the carbon skeleton for 6,000 structurally defined terpenes and 6,000 non-terpenoid natural products matched on skeleton carbon count. **Right:** standard deviation by skeleton size, variance ratio annotated.](fig_terpene.png)
 
-The isoprene rule is satisfied by 76.7% of NPClassifier-labelled terpenoids and by 10.9% of
+The isoprene rule is satisfied by 77.2% of NPClassifier-labelled terpenoids and by 11.2% of
 other pathways, a seven-fold enrichment that provides independent structural support for the
-labels (S3.3). Carbon counts agree exactly with the predicted class for 69.8% of labelled
-terpenoids and to within three carbons for 87.1%, the remainder being degraded or rearranged
-skeletons. Decoration is substantial: the median labelled terpenoid carries seven non-carbon
-heavy atoms, and monoterpenoids carry more decoration than backbone.
+labels (S3.3). Carbon counts agree exactly with the predicted class for 71.3% of 11,871 labelled
+terpenoids and to within three carbons for 87.7%, the remainder being degraded or rearranged
+skeletons; carotenoids agree best (87.3% exact). Decoration is substantial: the median labelled
+terpenoid carries seven non-carbon heavy atoms, and monoterpenoids carry more decoration than
+backbone.
 
 | | terpene | non-terpenoid | test |
 |---|---|---|---|
 | $n$ | 6,000 | 6,000 | — |
-| mean skeleton carbons | 20.60 | 20.60 | matched exactly |
-| mean dIpc | $+0.071$ | $+0.654$ | Cohen's $d = -1.17$ |
-| s.d. | 0.288 | 0.644 | Levene $p < 10^{-300}$ |
-| variance ratio | — | 5.017 | — |
+| mean skeleton carbons | 20.73 | 20.73 | matched exactly |
+| mean dIpc | $+0.054$ | $+0.648$ | Cohen's $d = -1.16$ |
+| s.d. | 0.322 | 0.650 | Levene $p < 10^{-300}$ |
+| variance ratio | — | 4.065 | — |
 
-Terpene skeletons occupy approximately one fifth of the topological variance of size-matched
+Terpene skeletons occupy approximately a quarter of the topological variance of size-matched
 natural products from other pathways, and lie close to the $n$-alkane reference while other
-pathways lie well to the ring-fused side. Variance ratios by skeleton size are 1.38, 2.75, 2.49
-and 9.87 over 6–14, 15–19, 20–24 and 25–32 carbons.
+pathways lie well to the ring-fused side. Variance ratios by skeleton size are 1.37, 2.50, 2.46,
+8.90 and 4.88 over 6–14, 15–19, 20–24, 25–32 and 33–60 carbons, covering the full terpene range
+from monoterpene to carotenoid.
+
+Class means separate within the terpenes. Carotenoids are the extreme: a C40 skeleton carrying
+eight methyl branches gives mean dIpc $-1.10$ with s.d. 0.218 ($n=81$), the most branched and the
+most topologically uniform of any class (S3.3).
 
 The effect strengthens as the measured object approaches the biosynthetic one:
 
@@ -195,7 +202,7 @@ The effect strengthens as the measured object approaches the biosynthetic one:
 |---|---|---|
 | whole molecule, classifier labels | 2.045 | $-0.86$ |
 | carbon skeleton, classifier labels | 3.223 | $-0.96$ |
-| carbon skeleton, isoprene rule | 5.017 | $-1.17$ |
+| carbon skeleton, isoprene rule | 4.065 | $-1.16$ |
 
 Removing enzymatic decoration and restricting to skeletons that satisfy the isoprene rule each
 increase the separation, which is the behaviour expected if the constraint acts on the backbone
@@ -220,10 +227,10 @@ as separate columns than pre-combined: division by $n^{1/3}$, $n^{2/3}$ or $n$ a
 both are present (partial $r$ of $-0.087$, $-0.092$, $-0.096$).
 
 Terpene biosynthesis leaves a measurable signature in graph topology. Assembly from a single
-branched C5 unit confines terpene carbon skeletons to one fifth of the topological variance of
+branched C5 unit confines terpene carbon skeletons to a quarter of the topological variance of
 skeleton-size-matched natural products from other pathways, holding them near the unbranched
 chain reference while other pathways extend to the ring-fused side. The effect is large
-($d=-1.17$) and uniform in direction across skeleton sizes.
+($d=-1.16$) and uniform in direction across skeleton sizes from C10 to C40.
 
 That it strengthens monotonically as decoration is removed and as the terpene definition is
 tightened from a predicted label to a structural criterion indicates that the constraint acts on
@@ -235,8 +242,9 @@ of `Ipc`.
 
 The isoprene rule applied here is a necessary condition, not a decision procedure: a carbon
 count divisible by five with the expected methyl density admits some non-terpenoid skeletons and
-excludes rearranged or degraded terpenes, including steroids. The 23% of labelled terpenoids it
-rejects are not a random sample.
+excludes rearranged or degraded terpenes, including steroids and apocarotenoids. The 23% of
+labelled terpenoids it rejects are not a random sample. Carotenoids and sesterterpenes are
+represented by 81 and 72 skeletons respectively, so their class means are the least precise.
 
 Control composition is consequential. Filtering controls to exclude structurally isoprenoid
 molecules inverts the comparison below 20 carbons, because what survives at those sizes is
@@ -287,9 +295,9 @@ is not an exhaustive novelty search.
 | boiling-point set | 1,000 molecules | 2–63 heavy atoms | general chemical space |
 | — variance decomposition subset | 400 | 3–49 | Figure 1 |
 | COCONUT 2022.01.01, NPClassifier-labelled | 407,029 | — | terpenoid pool |
-| — labelled terpenoids, skeleton validation | 10,918 | — | S3.3 |
-| — terpenes passing the isoprene rule | 6,000 | 6–32 skeleton C | Figure 3 |
-| — pathway controls, skeleton-size-matched | 6,000 | 6–32 skeleton C | Figure 3 |
+| — labelled terpenoids, skeleton validation | 11,871 | — | S3.3 |
+| — terpenes passing the isoprene rule | 6,000 | 10–40 skeleton C | Figure 3 |
+| — pathway controls, skeleton-size-matched | 6,000 | 10–40 skeleton C | Figure 3 |
 | connected 4-regular graphs | 8,037,418 at $n{=}16$ | $n=5$–16 | $Z_{\max}$ |
 
 Terpenoid superclass counts in COCONUT: diterpenoids 23,082; triterpenoids 22,280;
@@ -358,9 +366,9 @@ Generated graph counts match OEIS A006820. The maximum at $n=8$ is $K_{4,4}$. At
 maximum over all connected graphs of maximum degree $\le4$ (89,402 graphs) equals the maximum
 over 4-regular graphs, consistent with edge monotonicity.
 
-### S3.3 Structural validation of the terpenoid labels
+### S3.3 Structural validation and class breakdown
 
-Carbon-skeleton size against the size implied by the predicted class, 10,918 labelled terpenoids:
+Carbon-skeleton size against the size implied by the predicted class, 11,871 labelled terpenoids:
 
 | class | expected C | $n$ | exact | within 1 | within 3 | median decoration |
 |---|---|---|---|---|---|---|
@@ -368,24 +376,37 @@ Carbon-skeleton size against the size implied by the predicted class, 10,918 lab
 | Sesquiterpenoid | 15 | 2,500 | 83.5% | 89.7% | 92.3% | 5 |
 | Diterpenoid | 20 | 2,500 | 74.3% | 83.5% | 87.2% | 7 |
 | Sesterterpenoid | 25 | 936 | 60.8% | 76.6% | 87.1% | 5 |
-| Triterpenoid | 30 | 2,500 | 66.8% | 79.0% | 83.2% | 14 |
-| all | | 10,918 | 69.8% | 82.1% | 87.1% | 7 |
+| Triterpenoid | 30 | 2,500 | 67.0% | 78.8% | 82.6% | 14 |
+| Carotenoid | 40 | 953 | 87.3% | 90.8% | 96.5% | 4 |
+| all | | 11,871 | 71.3% | 82.7% | 87.7% | 7 |
 
-Decoration is the count of heavy atoms outside the carbon framework; 1.7% of labelled terpenoids
-are undecorated and the 90th percentile is 31.
+Decoration is the count of heavy atoms outside the carbon framework; 2.1% of labelled terpenoids
+are undecorated and the 90th percentile is 30.
 
 SMARTS substructure frequencies, labelled terpenoids against other pathways ($n\approx6{,}000$ each):
 
 | pattern | SMARTS | terpenoid | other | enrichment |
 |---|---|---|---|---|
-| isopropenyl | `[CH3][CX3](=[CH2])[#6]` | 6.3% | 0.8% | 8.0x |
-| gem-dimethyl | `[CH3][CX4]([CH3])[#6]` | 55.3% | 11.7% | 4.7x |
-| trisubstituted alkene | `[CH3][CX3](=[CX3])[#6]` | 36.1% | 7.8% | 4.6x |
-| isoprene C5 frame | `[CH3][#6]([#6])[#6][#6]` | 92.9% | 29.0% | 3.2x |
+| isopropenyl | `[CH3][CX3](=[CH2])[#6]` | 5.6% | 0.7% | 7.9x |
+| trisubstituted alkene | `[CH3][CX3](=[CX3])[#6]` | 37.2% | 7.0% | 5.3x |
+| gem-dimethyl | `[CH3][CX4]([CH3])[#6]` | 56.7% | 11.5% | 4.9x |
+| isoprene C5 frame | `[CH3][#6]([#6])[#6][#6]` | 92.7% | 28.6% | 3.2x |
 | isopropyl | `[CH3][CHX4]([CH3])[#6]` | 12.7% | 6.2% | 2.1x |
 
 The composite rule — skeleton carbons in $\{10,15,20,25,30,40\}$ with at least $C/5-1$ pendant
-methyls — is satisfied by 76.7% of labelled terpenoids and 10.9% of other pathways.
+methyls — is satisfied by 77.2% of labelled terpenoids and 11.2% of other pathways.
+
+dIpc of the carbon skeleton, by class, within the 6,000 terpenes passing the rule:
+
+| class | $n$ | mean skeleton C | mean dIpc | s.d. |
+|---|---|---|---|---|
+| Monoterpene C10 | 441 | 10.7 | $-0.099$ | 0.302 |
+| Sesquiterpene C15 | 1,886 | 15.4 | $+0.110$ | 0.261 |
+| Diterpene C20 | 1,963 | 20.1 | $+0.098$ | 0.339 |
+| Sesterterpene C25 | 72 | 25.1 | $-0.329$ | 0.451 |
+| Triterpene C30 | 1,557 | 29.7 | $+0.054$ | 0.217 |
+| Carotenoid C40 | 81 | 39.9 | $-1.101$ | 0.218 |
+| all terpenes | 6,000 | 20.7 | $+0.054$ | 0.322 |
 
 ### S3.4 Normalisation exponents
 

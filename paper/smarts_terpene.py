@@ -14,7 +14,8 @@ RDLogger.DisableLog("rdApp.*"); warnings.filterwarnings("ignore")
 
 TSV = "/tmp/coconut_predictions/coconut_predictions.tsv"
 TERP = {"Monoterpenoids": 10, "Sesquiterpenoids": 15, "Diterpenoids": 20,
-        "Sesterterpenoids": 25, "Triterpenoids": 30}
+        "Sesterterpenoids": 25, "Triterpenoids": 30,
+        "Carotenoids (C40)": 40}
 CONTROL = {"Alkaloids", "Shikimates and Phenylpropanoids", "Polyketides",
            "Fatty acids", "Amino acids and Peptides", "Carbohydrates"}
 
