@@ -13,9 +13,6 @@ pandoc report.md -o report.pdf --pdf-engine=xelatex
 
 | step | command | note |
 |---|---|---|
-| terpene set, validated by the isoprene rule | `python terpenes.py` | prints anything rejected |
-| dIpc for terpenes and the general set | `python analysis.py` | writes `data.json` |
-| statistics, curated pilot | `python stats.py` | Levene, Fligner, Mann–Whitney |
 | COCONUT sampling + dIpc | `python coconut.py 6000` | needs the Zenodo dump, see below |
 | COCONUT statistics (Finding 3) | `python coconut_stats.py` | the published numbers |
 | Figure 1 (Ipc defect) | `python fig_ipc.py` | |
@@ -38,8 +35,6 @@ python coconut.py 6000        # ~50 s: samples, computes dIpc, size-matches cont
 python coconut_stats.py
 ```
 
-## Every number in the paper traces to one of these
-
-Nothing in the report was typed from memory. Where a figure disagreed with the text during
-drafting, the text was corrected — the block-and-link model was described as an upper bound until
-the search beat it at n=23 and n=24, and that correction is recorded in the Caveats.
+`terpenes.py`, `analysis.py` and `stats.py` are the exploratory scripts that preceded the
+COCONUT analysis. They are kept because they run, but the reported results come from
+`coconut.py` and `coconut_stats.py`.

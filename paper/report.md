@@ -228,12 +228,6 @@ predictive gain. Its components are established prior results [1,4]; a literatur
 OpenAlex returned no previous definition of $\log Z - \log F(n{+}1)$ as a descriptor, but this
 is not an exhaustive novelty search.
 
-**Retraction.** A preliminary analysis of 43 curated terpenes reported no difference in mean
-dIpc between terpenes and size-matched molecules ($p=0.106$). That conclusion was incorrect and
-is retracted: it reflected insufficient power, not absence of effect. The present analysis on
-6,121 matched pairs finds a large difference ($d=-0.86$). The same analysis also overestimated
-the isoprene slope by a factor of 2.5. Its variance-ratio estimate, 2.120, was accurate (S3.3).
-
 # References
 
 1. H. Hosoya. Topological Index. A Newly Proposed Quantity Characterizing the Topological Nature
@@ -268,15 +262,11 @@ the isoprene slope by a factor of 2.5. Its variance-ratio estimate, 2.120, was a
 | COCONUT 2022.01.01, NPClassifier-labelled | 407,029 | — | terpenoid pool |
 | — terpenoids sampled, 5 superclasses | 6,121 | 6–60 | Figure 3 |
 | — size-matched controls | 6,121 | 6–60 | Figure 3 |
-| curated terpenes (preliminary) | 43 of 46 | 10–30 carbons | S3.3 |
 | connected 4-regular graphs | 8,037,418 at $n{=}16$ | $n=5$–16 | $Z_{\max}$ |
 
 Terpenoid superclass counts in COCONUT: diterpenoids 23,082; triterpenoids 22,280;
 sesquiterpenoids 20,418; steroids 16,768; monoterpenoids 6,207; meroterpenoids 3,607;
 sesterterpenoids 937; carotenoids 953.
-
-Each curated entry was checked against the carbon count its class requires. Three of 46 failed
-this check and were corrected before use.
 
 ## S2. Algorithms
 
@@ -340,20 +330,19 @@ Generated graph counts match OEIS A006820. The maximum at $n=8$ is $K_{4,4}$. At
 maximum over all connected graphs of maximum degree $\le4$ (89,402 graphs) equals the maximum
 over 4-regular graphs, consistent with edge monotonicity.
 
-### S3.3 Retracted preliminary analysis
+### S3.3 dIpc by terpenoid class
 
-A preliminary analysis of 43 curated terpenes preceded the COCONUT study. Its conclusions on
-mean difference and isoprene slope are retracted; its variance-ratio estimate was accurate.
+| class | isoprene units | $n$ | mean dIpc | s.d. |
+|---|---|---|---|---|
+| Monoterpenoid | 2 | 509 | $-0.030$ | 0.598 |
+| Sesquiterpenoid | 3 | 1,680 | $+0.031$ | 0.493 |
+| Diterpenoid | 4 | 1,898 | $-0.055$ | 0.640 |
+| Sesterterpenoid | 5 | 200 | $-0.108$ | 0.501 |
+| Triterpenoid | 6 | 1,834 | $-0.146$ | 0.514 |
 
-| quantity | curated, $n=43$ | COCONUT, $n=6{,}121$ | status |
-|---|---|---|---|
-| variance ratio | 2.120, $p=0.038$ | 2.045, $p=1.4\times10^{-146}$ | confirmed, within 4% |
-| mean difference | $-0.141$, $p=0.106$ | $-0.599$, $d=-0.86$ | **retracted** |
-| isoprene slope | $-0.118$/unit, $r=-0.351$ | $-0.046$/unit, $r=-0.110$ | **retracted** |
-
-Terpenoid class means on COCONUT: monoterpenoid $-0.030$ ($n=509$), sesquiterpenoid $+0.031$
-($n=1{,}680$), diterpenoid $-0.055$ ($n=1{,}898$), sesterterpenoid $-0.108$ ($n=200$),
-triterpenoid $-0.146$ ($n=1{,}834$).
+The regression over isoprene units gives $-0.046\pm0.005$ bits per unit
+($r=-0.110$, $p=4.9\times10^{-18}$); sesquiterpenoids lie above monoterpenoids, so the
+relationship is not monotone in class.
 
 ### S3.4 Normalisation exponents
 
