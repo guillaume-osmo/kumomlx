@@ -36,7 +36,7 @@ import numpy as np
 
 __all__ = ["charpoly_exact", "ipc_terms", "avg_ipc", "log2_ipc",
            "matching_information", "information_density", "evenness",
-           "delta_matching_information"]
+           "delta_matching_information", "z_max_log2", "matching_saturation"]
 
 
 def _primes_below(limit: int, count: int) -> list[int]:
@@ -273,3 +273,64 @@ def delta_matching_information(mol) -> float:
     if n < 2:
         return 0.0
     return matching_information(mol) - _log2_fibonacci(n + 1)
+
+
+# ----------------------------------------------------------------------------------------------
+# The upper reference: Z_max over chemical graphs
+# ----------------------------------------------------------------------------------------------
+#
+# dIpc measures against the n-alkane, which is Z_max for the ACYCLIC class. The other end of the
+# scale is Z_max over all chemical graphs on n atoms -- connected, max degree <= 4, the carbon
+# valence bound. Adding an edge can only add matchings, so the maximum is attained on 4-regular
+# graphs (confirmed at n=10: the maximum over all max-degree<=4 connected graphs and over the
+# 4-regular ones is the same, 780).
+#
+# These were enumerated EXHAUSTIVELY with nauty's geng (counts match OEIS A006820: 6 graphs at
+# n=8, 59 at n=10, 1544 at n=12, 88168 at n=14, 805491 at n=15) and the matching counts computed
+# by subset DP. That covers the terpene range outright -- monoterpene C10, sesquiterpene C15 --
+# which is where most natural-product skeletons live.
+#
+# Beyond n=15 enumeration is hopeless (8.0M graphs at n=16, ~1e30 by n=40), but log2 Z_max is
+# linear in n to within 0.03 bits over the enumerated range, so it extrapolates cleanly.
+
+#: Exhaustive maxima: n <= 4 from the full graph atlas, 5-15 from geng.
+Z_MAX_EXACT = {2: 2, 3: 4, 4: 10, 5: 26, 6: 51, 7: 100, 8: 209, 9: 388, 10: 780,
+               11: 1482, 12: 2921, 13: 5600, 14: 11032, 15: 21482}
+
+#: Least-squares fit of log2 Z_max over n >= 9; max residual 0.028 bits on the enumerated range.
+_ZMAX_SLOPE, _ZMAX_INTERCEPT = 0.96196, -0.04003
+
+
+def z_max_log2(n: int) -> float:
+    """``log2`` of the largest matching count a chemical graph on ``n`` atoms can have.
+
+    Exact for ``n <= 15`` from exhaustive enumeration; a linear extrapolation beyond, which is
+    accurate to 0.03 bits where it can be checked. Note the slope 0.962 is slightly below the
+    0.96342 of disjoint K4,4 blocks: joining blocks into one connected molecule costs edges.
+    """
+    if n < 2:
+        return 0.0
+    if n in Z_MAX_EXACT:
+        return math.log2(Z_MAX_EXACT[n])
+    return _ZMAX_SLOPE * n + _ZMAX_INTERCEPT
+
+
+def matching_saturation(mol) -> float:
+    """Where the molecule sits between the n-alkane and the densest possible graph, in [0, 1].
+
+        0  = unbranched chain (the alkane reference)
+        1  = the maximally fused 4-regular carbon cage
+        <0 = branched, i.e. below even the chain
+
+    Both ends are bounded and analytic, so this is comparable across molecular sizes. Be aware
+    that the upper end is not chemically realisable -- it has no hydrogens at all -- so real
+    molecules occupy only the lower part of the range; on 1000 boiling-point molecules the
+    median sits at -0.01 and 95% fall below 0.21. :func:`delta_matching_information` keeps more
+    resolution where the data actually lives, and is the better default.
+    """
+    n = mol.GetNumAtoms()
+    if n < 3:
+        return 0.0
+    lo = _log2_fibonacci(n + 1)
+    hi = z_max_log2(n)
+    return (matching_information(mol) - lo) / (hi - lo) if hi > lo else math.nan
