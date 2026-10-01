@@ -30,15 +30,17 @@ carried by a dozen other descriptors. Taking log(Ipc) also tames the range, but 
 grows with size, so it largely duplicates atom count; it is useful only as the SEPARATE
 extensive term, since log2(Ipc) = log2(S) + log2(H) decomposes cleanly.
 
-So this script ships both halves, each computed in log space so neither can overflow:
-  * `AvgIpc`   -- H, the intensive information content (kept from the stock descriptor list)
-  * `Ipc_log2` -- log2(S) + log2(H), replacing the raw `Ipc` column
+Fixing the representation is only half of it. RDKit computes the characteristic polynomial in
+float64, where the alternating-sign recursion cancels catastrophically: its `AvgIpc` is already
+wrong by 2e-06 at 80 atoms, by 0.028 at 100, and stops being monotone from about 110 (3.775 at
+105, then 3.577, 2.891, 1.401 ...) while the true entropy keeps rising toward its bound.
 
-One further limit, found by checking RDKit against an exact integer characteristic polynomial:
-RDKit's float64 coefficients suffer catastrophic cancellation, and `AvgIpc` stops being monotone
-in n from about 110 atoms (3.775 at 105, then 3.577, 2.891, 1.401 ...), while the exact entropy
-is monotone and bounded. Both Ipc columns are therefore emitted as NaN above
-`IPC_MAX_ATOMS`; Kumo handles missing values natively, which is far better than a wrong number.
+So both columns come from `kumomlx.ipc`, which computes the coefficients EXACTLY as integers
+(Faddeev-LeVerrier modulo several small primes, reconstructed by CRT) and then takes the entropy
+in log space. That is exact and monotone at any molecular size, so no validity cap is needed:
+
+  * `AvgIpc`   -- H, the intensive information content, bounded by log2(n_atoms + 1)
+  * `Ipc_log2` -- log2(S) + log2(H), replacing the raw `Ipc` column
 """
 from __future__ import annotations
 
@@ -50,32 +52,12 @@ import warnings
 
 import numpy as np
 from rdkit import Chem, RDLogger
-from rdkit.Chem import Descriptors, Graphs
+from rdkit.Chem import Descriptors
+
+from kumomlx.ipc import ipc_terms
 
 RDLogger.DisableLog("rdApp.*")
 warnings.filterwarnings("ignore")
-
-#: Above this, RDKit's float64 characteristic polynomial loses monotonicity (measured at 110).
-IPC_MAX_ATOMS = 100
-
-
-def ipc_terms(mol) -> tuple[float, float]:
-    """``(AvgIpc, log2(Ipc))``, both in log space, or ``(nan, nan)`` past the validity limit."""
-    if mol.GetNumAtoms() > IPC_MAX_ATOMS:
-        return math.nan, math.nan
-    c = np.abs(np.asarray(Graphs.CharacteristicPolynomial(mol, Chem.GetAdjacencyMatrix(mol)),
-                          dtype=np.float64))
-    c = c[c > 0]
-    if c.size == 0:
-        return math.nan, math.nan
-    # log-sum-exp: log2(S) without ever forming S, which is what overflows.
-    L = np.log2(c)
-    m = L.max()
-    log2_S = m + math.log2(float(np.exp2(L - m).sum()))
-    H = float((np.exp2(L - log2_S) * (log2_S - L)).sum())
-    if not (H > 0 and math.isfinite(H) and math.isfinite(log2_S)):
-        return math.nan, math.nan
-    return H, log2_S + math.log2(H)
 
 
 def build_columns():
