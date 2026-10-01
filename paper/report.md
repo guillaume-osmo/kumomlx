@@ -372,28 +372,43 @@ over 4-regular graphs, consistent with edge monotonicity.
 
 Carbon-skeleton size against the size implied by the predicted class, 11,871 labelled terpenoids:
 
-| class | expected C | $n$ | exact | within 1 | within 3 | median decoration |
-|---|---|---|---|---|---|---|
-| Monoterpenoid | 10 | 2,482 | 58.0% | 78.1% | 85.5% | 11 |
-| Sesquiterpenoid | 15 | 2,500 | 83.5% | 89.7% | 92.3% | 5 |
-| Diterpenoid | 20 | 2,500 | 74.3% | 83.5% | 87.2% | 7 |
-| Sesterterpenoid | 25 | 936 | 60.8% | 76.6% | 87.1% | 5 |
-| Triterpenoid | 30 | 2,500 | 67.0% | 78.8% | 82.6% | 14 |
-| Carotenoid | 40 | 953 | 87.3% | 90.8% | 96.5% | 4 |
-| all | | 11,871 | 71.3% | 82.7% | 87.7% | 7 |
+\begin{center}
+\small
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+class & expected C & $n$ & exact & within 1 & within 3 & median decor. \\
+\midrule
+Monoterpenoid   & 10 & 2,482 & 58.0\% & 78.1\% & 85.5\% & 11 \\
+Sesquiterpenoid & 15 & 2,500 & 83.5\% & 89.7\% & 92.3\% & 5 \\
+Diterpenoid     & 20 & 2,500 & 74.3\% & 83.5\% & 87.2\% & 7 \\
+Sesterterpenoid & 25 & 936   & 60.8\% & 76.6\% & 87.1\% & 5 \\
+Triterpenoid    & 30 & 2,500 & 67.0\% & 78.8\% & 82.6\% & 14 \\
+Carotenoid      & 40 & 953   & 87.3\% & 90.8\% & 96.5\% & 4 \\
+\midrule
+all             &    & 11,871 & 71.3\% & 82.7\% & 87.7\% & 7 \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 Decoration is the count of heavy atoms outside the carbon framework; 2.1% of labelled terpenoids
 are undecorated and the 90th percentile is 30.
 
 SMARTS substructure frequencies, labelled terpenoids against other pathways ($n\approx6{,}000$ each):
 
-| pattern | SMARTS | terpenoid | other | enrichment |
-|---|---|---|---|---|
-| isopropenyl | `[CH3][CX3](=[CH2])[#6]` | 5.6% | 0.7% | 7.9x |
-| trisubstituted alkene | `[CH3][CX3](=[CX3])[#6]` | 37.2% | 7.0% | 5.3x |
-| gem-dimethyl | `[CH3][CX4]([CH3])[#6]` | 56.7% | 11.5% | 4.9x |
-| isoprene C5 frame | `[CH3][#6]([#6])[#6][#6]` | 92.7% | 28.6% | 3.2x |
-| isopropyl | `[CH3][CHX4]([CH3])[#6]` | 12.7% | 6.2% | 2.1x |
+\begin{center}
+\small
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+pattern & SMARTS & terpenoid & other & enrichment \\
+\midrule
+isopropenyl           & \texttt{[CH3][CX3](=[CH2])[\#6]}  & 5.6\%  & 0.7\%  & 7.9$\times$ \\
+trisubstituted alkene & \texttt{[CH3][CX3](=[CX3])[\#6]}  & 37.2\% & 7.0\%  & 5.3$\times$ \\
+gem-dimethyl          & \texttt{[CH3][CX4]([CH3])[\#6]}   & 56.7\% & 11.5\% & 4.9$\times$ \\
+isoprene C5 frame     & \texttt{[CH3][\#6]([\#6])[\#6][\#6]} & 92.7\% & 28.6\% & 3.2$\times$ \\
+isopropyl             & \texttt{[CH3][CHX4]([CH3])[\#6]}  & 12.7\% & 6.2\%  & 2.1$\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 The composite rule — skeleton carbons in $\{10,15,20,25,30,40\}$ with at least $C/5-1$ pendant
 methyls — is satisfied by 77.2% of labelled terpenoids and 11.2% of other pathways.
