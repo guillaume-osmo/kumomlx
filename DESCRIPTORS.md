@@ -188,3 +188,47 @@ else, while `J` separates benzene and caffeine (dense, even matching structure) 
 chains, independently of how many atoms they have.
 
 Available as `kumomlx.ipc.matching_information`, `.information_density` and `.evenness`.
+
+## Should the density be per atom, per surface, or per volume?
+
+"We live in 3-D space, so a density should be per volume (n³) or per surface (n²), not per
+atom." The physical instinct is right; it does not survive contact with this chemical space, for
+three measured reasons.
+
+**1. `n` is already volume-like, not a length.** Atoms pack at roughly constant density, so
+n ∝ V. "Per atom" *is* "per unit volume" up to a constant. The n² / n³ exponents would apply if
+n were a linear extent, which it is not.
+
+**2. Small molecules are not compact 3-D objects.** Measured over the 1000 boiling-point
+molecules (2–63 heavy atoms):
+
+| | empirical exponent | compact sphere would give |
+|---|---|---|
+| surface area (LabuteASA) ~ n^k | **0.913** | 0.667 |
+| volume (MolMR) ~ n^k | **0.926** | 1.000 |
+
+Both are nearly linear. These molecules are chain- and branch-like — effectively
+low-dimensional — so surface ≈ volume ≈ n and the geometric distinction evaporates. It would
+matter for proteins or nanoparticles, where compactness is real.
+
+**3. The exponent carries no independent information.** `log2(Z)/n^k` is a deterministic
+function of the pair `(log2 Z, n)`, so it cannot know anything they do not. Partial correlation
+with the boiling-point residual, as the basis is enriched:
+
+| basis | /n^(1/3) | /n^(2/3) | /n |
+|---|---|---|---|
+| size only (n, MW, ASA), linear | +0.444 | +0.426 | +0.360 |
+| size + log2(Z) | +0.247 | +0.220 | +0.060 |
+| size + log2(Z) + nonlinear n | **−0.087** | **−0.092** | **−0.096** |
+
+Once `log2(Z)` and nonlinear powers of `n` are both present, every exponent adds nothing and all
+three converge. The apparent advantage of `n^(1/3)` in the first row is a nonlinear reshaping the
+linear basis could not absorb — not evidence about the dimensionality of space.
+
+**So the exponent is a question of functional form, not of physics.** For a model that learns
+nonlinear interactions, ship `log2(Z)` and `n` as separate columns and let it find the
+relationship; do not pre-divide and discard a degree of freedom.
+
+`information_density` is kept because it is the right quantity for the *physics* of a homologous
+series — it is the monomer–dimer entropy per site and converges to log2(φ) — not because it is
+the right feature for a learned model.

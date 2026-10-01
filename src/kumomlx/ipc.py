@@ -201,6 +201,12 @@ def information_density(mol) -> float:
     The intensive form, and the statistical-mechanics entropy per site of the monomer-dimer
     model on the graph. It converges along a homologous series -- for linear alkanes to
     ``log2(golden ratio) = 0.6942`` -- so it is comparable between molecules of different size.
+
+    As a MODEL FEATURE, prefer shipping ``matching_information`` and the atom count separately.
+    Any ``log2(Z)/n**k`` is a deterministic function of that pair, and once both are available
+    with nonlinear terms, every exponent -- 1/3, 2/3 or 1 -- adds nothing (measured partial
+    correlations -0.087, -0.092, -0.096 against the boiling-point residual). Dividing only
+    discards a degree of freedom. This function is for the physics, not for the feature matrix.
     """
     n = mol.GetNumAtoms()
     return matching_information(mol) / n if n else math.nan
