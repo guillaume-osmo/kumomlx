@@ -8,3 +8,6 @@ __pycache__/
 *.npz
 .DS_Store
 .venv/
+*.egg-info/
+build/
+dist/
