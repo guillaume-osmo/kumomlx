@@ -73,27 +73,37 @@ class KumoMLX:
 
         inner.forward = mlx_forward
 
-    def quantiles(self, x_context, y_context, x_query) -> np.ndarray:
-        """The full predictive distribution: ``[n_query, 999]`` quantiles per row."""
+    def quantiles(self, x_context, y_context, x_query, *, seed: int | None = 0) -> np.ndarray:
+        """The full predictive distribution: ``[n_query, 999]`` quantiles per row.
+
+        The recipe shuffles columns (a latin square) and rotates the per-column transform, and it
+        draws that randomness fresh on every call. Unseeded, the SAME model on the SAME inputs
+        moves by ~2e-02 between calls -- enough to swamp any comparison and to make results
+        irreproducible. ``seed`` is therefore fixed by default; pass ``seed=None`` for the
+        upstream stochastic behaviour, e.g. to average several draws.
+        """
         import torch                                    # noqa: PLC0415
 
+        gen = None if seed is None else torch.Generator().manual_seed(seed)
         with torch.no_grad():
             out = self._torch(
                 x_context=torch.as_tensor(np.asarray(x_context), dtype=torch.float32),
                 y_context=torch.as_tensor(np.asarray(y_context),
                                           dtype=torch.float32).unsqueeze(-1),
-                x_query=torch.as_tensor(np.asarray(x_query), dtype=torch.float32))
+                x_query=torch.as_tensor(np.asarray(x_query), dtype=torch.float32),
+                generator=gen)
         grid = torch.as_tensor(getattr(out, "numerical", out)).float().numpy()
         return grid.reshape(len(np.asarray(x_query)), -1)
 
-    def predict(self, x_context, y_context, x_query) -> np.ndarray:
+    def predict(self, x_context, y_context, x_query, *, seed: int | None = 0) -> np.ndarray:
         """Point predictions: the mean over the quantile grid, the Bayes estimator under
         squared error."""
-        return self.quantiles(x_context, y_context, x_query).mean(axis=1)
+        return self.quantiles(x_context, y_context, x_query, seed=seed).mean(axis=1)
 
-    def predict_interval(self, x_context, y_context, x_query, level: float = 0.9):
+    def predict_interval(self, x_context, y_context, x_query, level: float = 0.9,
+                         *, seed: int | None = 0):
         """Central prediction interval at ``level`` coverage, read off the quantile grid."""
-        q = self.quantiles(x_context, y_context, x_query)
+        q = self.quantiles(x_context, y_context, x_query, seed=seed)
         lo = int(round((1 - level) / 2 * (q.shape[1] - 1)))
         hi = q.shape[1] - 1 - lo
         qs = np.sort(q, axis=1)

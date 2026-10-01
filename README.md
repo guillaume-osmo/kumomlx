@@ -45,11 +45,11 @@ boiling point -65 to 1023 C (sd 121.6)
 context 800 / query 200
 
                 MAE     RMSE       R2  Spearman
-Kumo          12.07    30.35   0.9357    0.9758
+Kumo          12.31    31.22   0.9320    0.9737
 ridge         17.45    33.45   0.9219    0.9662
 
-in-context prediction of 200 molecules: 5.59 s (27.9 ms each), no training
-90% interval covers 90.0% of held-out molecules (median width 30 C)
+in-context prediction of 200 molecules: 2.89 s (14.4 ms each), no training
+90% interval covers 91.0% of held-out molecules (median width 30 C)
 ```
 
 The ridge baseline is there because an impressive error means nothing unaccompanied: boiling
@@ -59,6 +59,18 @@ interval covering 90.0% is not tuned — it is read straight off the 999-quantil
 The largest residual is `O=C(O)c1cc(Cl)cc(Cl)c1` with a recorded boiling point of 0.0 °C, which
 is a label error in the source data; dichlorobenzoic acids boil near 300 °C, which is what the
 model predicts.
+
+### Predictions are seeded by default
+
+The recipe shuffles columns (a latin square) and rotates the per-column transform, drawing that
+randomness **fresh on every call**. Unseeded, the same model on the same inputs moves by
+**~2e-02** between consecutive calls — which is larger than this port's entire deviation from
+torch, and is how a float32 explanation for a residual can look convincing when nothing is being
+measured but noise. `predict`, `quantiles` and `predict_interval` therefore take `seed=0` by
+default; pass `seed=None` for the upstream stochastic behaviour, for instance to average draws.
+
+With the generator seeded, torch is bit-exact run to run and the hybrid pipeline agrees with it
+to **1.67e-06**, or 0.0002% of the prediction spread.
 
 ```python
 from kumomlx import KumoMLX, load_boiling_point
