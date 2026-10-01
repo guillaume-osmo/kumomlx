@@ -39,9 +39,11 @@ enumeration (8{,}037{,}418 graphs), by validated search to $n=24$, and to within
 a fitted law beyond: $\log_2 Z_{\max}(n) = 0.96092\,n - 0.02313$.
 
 \medskip
-\textbf{Application.} Terpene topological space is narrower than size-matched general chemistry
-(variance ratio $2.12$, Levene $p=0.038$), and $\mathrm{dIpc}$ falls by $0.118$ bits per isoprene
-unit ($r=-0.351$, $p=0.021$). Mean position does \emph{not} differ ($p=0.106$).
+\textbf{Application.} On COCONUT ($n=6{,}121$ terpenoids against exactly size-matched
+non-terpenoids), terpenoid topological space is \textbf{half as variable} as the rest of natural
+product chemistry --- variance ratio $2.05$, $p = 1.4\times10^{-146}$, and the gap holds in every
+size stratum from 6 to 60 heavy atoms. Terpenoids are also substantially more branched: mean
+$\mathrm{dIpc}$ $-0.058$ against $+0.541$, Cohen's $d = -0.86$.
 \end{tldr}
 
 ## The question
@@ -63,15 +65,27 @@ exactly the large natural products where structure is most interesting, and a de
 | boiling-point set (`bpsubset.csv`) | 1,000 molecules | 2–63 heavy atoms | general chemical space |
 | — subset used for variance decomposition | 400 molecules | 3–49 heavy atoms | Finding 1 |
 | — size-matched to terpenes | 609 molecules | 9–35 heavy atoms | Finding 3 control |
-| curated terpenes | 43 (of 46 proposed) | 10–30 carbons | Finding 3 |
+| COCONUT 2022.01.01, NPClassifier-labelled | 407,029 compounds | — | Finding 3 pool |
+| — terpenoids sampled, 5 superclasses | 6,121 | 6–60 heavy atoms | Finding 3 |
+| — non-terpenoid controls, exactly size-matched | 6,121 | 6–60 heavy atoms | Finding 3 control |
+| curated terpenes (pilot) | 43 (of 46 proposed) | 10–30 carbons | Finding 3 pilot |
 | connected 4-regular graphs, `geng` | 8,037,418 at $n{=}16$ | $n = 5\ldots16$ | $Z_{\max}$, exact |
 | local-search runs | 8 sizes × 3–16 restarts | $n = 17\ldots24$ | $Z_{\max}$, lower bound |
 
-Terpenes were curated rather than drawn from COCONUT, which was not available locally. Every
-entry was checked against the carbon count its class requires — C10 monoterpene, C15
+Finding 3 was first run on a curated set, then repeated on COCONUT; both are reported, because
+the disagreement between them is itself informative. For the curated set, every entry was checked
+against the carbon count its class requires — C10 monoterpene, C15
 sesquiterpene, C20 diterpene, C30 triterpene. **Three of 46 failed and were dropped**
 (fenchone at 9 C, alpha-humulene and valencene at 14 C), then corrected and re-validated; the check
 exists because a mistranscribed SMILES almost always has the wrong carbon count.
+
+For COCONUT, terpenoids are those with NPClassifier pathway exactly `Terpenoids` and one of five
+terpene superclasses; the 4,706 compounds labelled `Alkaloids,Terpenoids` are excluded rather
+than assigned. Controls are single-pathway non-terpenoids, **matched one-for-one on heavy-atom
+count** (mean size agrees to $10^{-4}$ atoms). A range restriction would have left a size
+gradient inside the window, and the spread of dIpc grows with size, which would have manufactured
+the effect under test. The largest fragment is taken, since COCONUT contains salts and $Z$ is
+multiplicative over components, so a counter-ion would read as a large negative dIpc.
 
 ## Method
 
@@ -202,29 +216,49 @@ The density *peaks* at $K_{4,4}$ ($n=8$) and the sequence has period-8 structure
 connected 4-regular graph cannot reach the density of disjoint $K_{4,4}$ blocks: joining two
 blocks costs exactly $0.0416$ bits.
 
-## Finding 3: terpene topological space is narrower, and branches with each isoprene unit
+## Finding 3: terpenoid space is half as variable as the rest of natural product chemistry
 
-![**Left:** dIpc distributions, 43 curated terpenes against 609 size-matched general molecules (9–35 heavy atoms). **Right:** dIpc against isoprene unit count; band is the fit $\pm 1$ s.e.](fig_terpene.png)
+![**Left:** dIpc distributions, 6,121 COCONUT terpenoids against 6,121 non-terpenoids matched one-for-one on heavy-atom count. Dashed lines are group means. **Right:** standard deviation by size band, with the variance ratio annotated.](fig_terpene.png)
 
-| comparison | terpenes | general (size-matched) | test |
+| | terpenoid | non-terpenoid (size-matched) | test |
 |---|---|---|---|
-| n | 43 | 609 | — |
-| mean dIpc | $-0.115$ | $+0.026$ | Mann–Whitney $p = 0.106$ |
-| s.d. | 0.378 | 0.550 | Levene $p = 0.038$ |
-| variance ratio | — | 2.120 | Fligner $p = 0.055$ |
+| n | 6,121 | 6,121 | — |
+| mean heavy atoms | 30.72 | 30.72 | matched to $10^{-4}$ |
+| mean dIpc | $-0.058$ | $+0.541$ | Cohen's $d = -0.86$ |
+| s.d. | 0.562 | 0.803 | Levene $p = 1.4\times10^{-146}$ |
+| variance ratio | — | 2.045 | Fligner $p = 2.8\times10^{-146}$ |
 
-The **means do not differ**. What differs is the spread: terpene dIpc has less than half the
-variance of size-matched general chemistry. Stratifying by size to remove any residual size
-confound, the effect is carried by the smallest band — 9–13 atoms, $p = 0.028$ ($n=26$ terpenes
-against 442 general) — while the 14–18 and 19–35 bands are not significant ($p = 0.24$, $p =
-0.52$) with 10 and 7 terpenes respectively.
+**Terpenoid skeletons explore roughly half the topological variance** of size-matched natural
+products, and they sit well to the branched side of the chain reference while everything else
+sits to the ring-fused side. The effect is not a size artefact: it holds in every stratum from 6
+to 60 heavy atoms, with variance ratios of 1.52, 1.95, 1.78, 2.09 and 2.06 (all $p < 0.01$, four
+of five below $10^{-22}$).
 
-Within terpenes, dIpc falls by $0.118 \pm 0.049$ bits per isoprene unit ($r = -0.351$,
-$p = 0.021$, $n=43$). That is chemically what one expects: isoprene is a branched C5 unit, so
-each addition contributes methyl branching, and branching reduces the matching count. Class means
-run monotonically from $-0.012$ (monoterpene, $n=26$) through $-0.172$ (sesquiterpene, $n=10$) to
-$-0.462$ (diterpene, $n=4$), with triterpenes at $-0.357$ ($n=3$) breaking the monotonicity on
-three molecules.
+This is what a biosynthetic constraint should look like. Terpenoids are assembled by head-to-tail
+condensation of a single branched C5 unit, so their skeletons cannot explore graph topology
+freely; polyketides, alkaloids and shikimates are not built that way and do not show the
+restriction.
+
+### The pilot got two of three answers wrong
+
+The curated 43-molecule pilot is reported here because the comparison is instructive:
+
+| claim | curated pilot ($n=43$) | COCONUT ($n=6{,}121$) | verdict |
+|---|---|---|---|
+| variance ratio | 2.120, $p=0.038$ | 2.045, $p=1.4\times10^{-146}$ | **replicates**, almost exactly |
+| mean difference | $-0.141$, $p=0.106$ | $-0.599$, $d=-0.86$ | **null overturned** |
+| isoprene slope | $-0.118$/unit, $r=-0.351$ | $-0.046$/unit, $r=-0.110$ | **effect size halved** |
+
+The variance result replicated to within 4% on a sample 140 times larger. The pilot's "means do
+not differ" was a **power failure, not a null** — the true effect is large. And the isoprene
+trend, which the pilot put at $-0.118$ bits per unit, is $-0.046$ on COCONUT ($p=4.9\times
+10^{-18}$, $n=6{,}121$): still real, but the small sample inflated it by a factor of 2.5, and
+$r$ fell from $-0.351$ to $-0.110$.
+
+Class means are not monotone in isoprene count on the full data — monoterpenoid $-0.030$
+($n=509$), sesquiterpenoid $+0.031$ ($n=1{,}680$), diterpenoid $-0.055$ ($n=1{,}898$),
+sesterterpenoid $-0.108$ ($n=200$), triterpenoid $-0.146$ ($n=1{,}834$). Sesquiterpenoids break
+the trend, which the pilot's four classes could not have revealed.
 
 ## Recommendation
 
@@ -250,26 +284,38 @@ three molecules.
 
 ## Caveats
 
-- **The terpene result is the weakest finding here.** 43 curated molecules, not a database draw.
-  The variance effect is marginal ($p=0.038$ Levene, $p=0.055$ Fligner) and survives in only one
-  of three size strata. It should be replicated on COCONUT before being relied on.
-- **Flattering limitation:** had the terpene set been larger, the *mean* difference ($-0.141$
-  bits, $p=0.106$) might well have reached significance, which would have made the result look
-  stronger and cleaner than "the spread differs but the location does not".
-- **Another flattering one:** the local search values at $n=17\ldots24$ are lower bounds. If they
-  are slightly low, the true $Z_{\max}$ curve is slightly steeper, and the fitted law — which is
-  the headline of Finding 2 — would be *more* accurate as an underestimate, not less.
-- **dIpc is not new in its ingredients.** The Hosoya index is Hosoya 1971; "branched implies small
-  $Z$" is Hosoya's own 2002 result; the path maximising $Z$ among trees is classical extremal
-  graph theory. Seven OpenAlex queries found no prior definition of $\log Z - \log F(n{+}1)$ as a
-  descriptor, and none for a normalised $Z/Z_{\max}$ — but that is not an exhaustive novelty
-  search, and mathematical-chemistry venues are thin in that index.
-- **$K_{4,4}$ optimality is taken from the literature, not proved here.** It was verified against
-  $K_5$, the octahedron and circulants, and is exhaustively confirmed at $n = 8$ and $n = 16$,
-  but the asymptotic claim rests on Friedland-type results that were not re-derived.
-- **The block-and-link model is not an upper bound.** It appeared to be one over $n\le16$ and
-  was described as such in working notes; the search beats it at $n=23$ and $n=24$. The fitted
+- **The isoprene trend is weak.** On COCONUT it is $-0.046$ bits per unit with $r = -0.110$ —
+  highly significant at $n=6{,}121$, but explaining about 1% of the variance. The pilot's
+  $r=-0.351$ was small-sample inflation. Class means are not monotone: sesquiterpenoids sit
+  above monoterpenoids.
+- **NPClassifier labels are predictions, not ground truth.** Terpenoid assignment comes from a
+  neural classifier applied to COCONUT, not from curated biosynthetic provenance. Its errors are
+  unlikely to correlate with dIpc, but the class boundaries are soft — meroterpenoids and
+  steroids were excluded as ambiguous, which is a judgement call that was not sensitivity-tested.
+- **COCONUT is a literature aggregation.** Version 2022.01.01 is assembled from many sources and
+  is known to contain duplicates and structures of varying curation quality. No deduplication was
+  applied here beyond taking the largest fragment, so near-identical scaffolds may be
+  over-represented in both groups.
+- **Flattering limitation:** the pilot reported a *larger* isoprene slope and a cleaner monotone
+  class trend than the full data support. Had the pilot been the only study, Finding 3 would
+  have read as stronger and tidier than it is.
+- **Another flattering one:** the local-search values at $n = 17\ldots24$ are lower bounds. If
+  they are slightly low, the fitted law in Finding 2 is a slight *underestimate*, which would
+  make it look more accurate than it is rather than less.
+- **dIpc adds no information to a flexible model** already given $\log_2 Z$ and $n$ (partial
+  $r = +0.0095$). The case for it is interpretability, extrapolation and small-data usability,
+  not predictive lift. A report that omitted this would be advocacy.
+- **$K_{4,4}$ optimality is taken from the literature, not proved here.** It is exhaustively
+  confirmed at $n=8$ and $n=16$ and was checked against $K_5$, the octahedron and circulants,
+  but the asymptotic claim rests on results that were not re-derived.
+- **The block-and-link model is not an upper bound.** It appeared to be one over $n\le16$ and was
+  described as such in working notes; the local search beats it at $n=23$ and $n=24$. The fitted
   law is used instead.
+- **dIpc is not new in its ingredients.** The Hosoya index is Hosoya (1971); "branched implies
+  small $Z$" is Hosoya's own later result; the path maximising $Z$ among trees is classical
+  extremal graph theory. A literature search over OpenAlex found no prior definition of
+  $\log Z - \log F(n{+}1)$ as a descriptor, and none for a normalised $Z/Z_{\max}$ — but that is
+  not an exhaustive novelty search, and mathematical-chemistry venues are thin in that index.
 
 ## Reproducibility
 
@@ -282,12 +328,35 @@ All code, data and figures: **[github.com/guillaume-osmo/kumomlx](https://github
 | upstream RDKit patch and Eigen C++ port | `rdkit-fix/` |
 | $Z_{\max}$ enumeration (C, reads `geng` output) | `rdkit-fix/zmax/zmax.c` |
 | bundled boiling-point data, 217 descriptors | `src/kumomlx/data/bp_1000.csv` |
+| COCONUT validation of Finding 3 | `paper/coconut.py`, `paper/coconut_stats.py` |
 
 Upstream pull request: [rdkit/rdkit#9657](https://github.com/rdkit/rdkit/pull/9657).
 Graph enumeration used `geng` from nauty 2.9.3 (`geng -c -d4 -D4 n`); generated counts match
-OEIS A006820, which is the check that the enumeration is complete. RDKit 2025.09.4 throughout.
+OEIS A006820, which is the check that the enumeration is complete. RDKit 2025.09.4 throughout. Natural product structures and labels are COCONUT 2022.01.01 with NPClassifier predictions (refs 6–8); the terpenoid/control split, the exact size-matching and every statistic in Finding 3 regenerate from `paper/coconut.py` and `paper/coconut_stats.py`.
 
 Validation performed: the modular-CRT polynomial against exact rational arithmetic; the terpene
 set against the isoprene rule; the local search against known exact maxima; the $K_{4,4}$-chain
 construction against the exhaustive maximum at $n=16$ (an earlier version of that construction
 exceeded it, which revealed it was violating the degree bound).
+
+## References
+
+1. H. Hosoya. Topological Index. A Newly Proposed Quantity Characterizing the Topological Nature
+   of Structural Isomers of Saturated Hydrocarbons. *Bull. Chem. Soc. Jpn.* **44**, 2332 (1971).
+   [10.1246/bcsj.44.2332](https://doi.org/10.1246/bcsj.44.2332)
+2. D. Bonchev, N. Trinajstić. Information theory, distance matrix, and molecular branching.
+   *J. Chem. Phys.* **67**, 4517 (1977). [10.1063/1.434593](https://doi.org/10.1063/1.434593)
+3. S. H. Bertz. Branching in graphs and molecules. *Discrete Appl. Math.* **19**, 65 (1988).
+   [10.1016/0166-218X(88)90006-6](https://doi.org/10.1016/0166-218X(88)90006-6)
+4. H. Hosoya. Chemical meaning of octane number analyzed by topological indices (2002) — the
+   source of "a high-octane isomer should be highly branched (small $Z$)".
+5. B. D. McKay, A. Piperno. Practical graph isomorphism, II. *J. Symb. Comput.* **60**, 94 (2014).
+   [10.1016/j.jsc.2013.09.003](https://doi.org/10.1016/j.jsc.2013.09.003) — `nauty` / `geng`.
+6. M. Sorokina, P. Merseburger, K. Rajan, M. A. Yirik, C. Steinbeck. COCONUT online: Collection
+   of Open Natural Products database. *J. Cheminform.* **13**, 2 (2021).
+   [10.1186/s13321-020-00478-9](https://doi.org/10.1186/s13321-020-00478-9)
+7. H. W. Kim *et al.* NPClassifier: A Deep Neural Network-Based Structural Classification Tool
+   for Natural Products. *J. Nat. Prod.* **84**, 2795 (2021).
+   [10.1021/acs.jnatprod.1c00399](https://doi.org/10.1021/acs.jnatprod.1c00399)
+8. NPClassifier predictions of COCONUT compounds.
+   [10.5281/zenodo.10629838](https://doi.org/10.5281/zenodo.10629838) — the labelled dump used here.
