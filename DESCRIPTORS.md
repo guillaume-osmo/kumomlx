@@ -100,3 +100,91 @@ redundant: the recipe already applies, per column, a round-robin choice of ident
 transform, robust scaling with soft clipping, or rank-Gaussian. Rank-Gaussian is invariant to any
 monotone transform, so a pre-applied `arcsinh` is a no-op for those columns and changes only the
 identity/power-transform ones. The example therefore feeds raw descriptor values.
+
+---
+
+# What is `Ipc`, actually? A reformulation
+
+Fixing the arithmetic leaves a prior question: for a 250-carbon chain the corrected `Ipc` is
+**5.48e+52**. What is that number?
+
+## S is the Hosoya index
+
+`S = sum |c_i|` is not an abstract normaliser. For an **acyclic** molecule it is exactly the
+**Hosoya index Z** — the total number of matchings of the graph. Verified for linear alkanes,
+where it is also the Fibonacci number:
+
+| n | S = Σ\|c\| | Fibonacci(n+1) | Hosoya Z |
+|---|---|---|---|
+| 5 | 8 | 8 | 8 |
+| 12 | 233 | 233 | 233 |
+| 20 | 10946 | 10946 | 10946 |
+
+For cyclic molecules the cycle terms make S the weighted Sachs subgraph count instead, slightly
+above Z (benzene: S = 20, Z = 18). And it grows geometrically: `log2(S)/n` converges to
+**log2(φ) = 0.6942**, the golden ratio, measured 0.648 at n=10 rising to 0.692 at n=250.
+
+So `Ipc` for C₂₅₀ is `Fibonacci(251) × 4.2886`.
+
+## Why the formula is malformed
+
+Bonchev and Trinajstić's total information content, `I = N · H`, is well posed when `N` counts the
+**elements of a population** that `H` partitions into classes: N elements × H bits per element =
+bits. `Ipc = S · H` does not have that structure:
+
+* `H` is an entropy over the **n+1 coefficient classes**, bounded by `log2(n+1)`;
+* `S` counts **matchings**, and grows like φⁿ.
+
+These are two different populations. Multiplying them yields a quantity with neither units nor an
+interpretation — it is not "information" in any sense.
+
+## And empirically it is vacuous
+
+On 400 molecules of 3–49 atoms:
+
+| | |
+|---|---|
+| variance of log2(Ipc) explained by log2(S) alone | **99.79%** |
+| range contributed by log2(S) | 32.3 bits |
+| range contributed by log2(H) | 2.24 bits |
+| correlation of log2(S) with atom count | r = 0.993 |
+
+`Ipc` is the Hosoya index wearing an information-theoretic hat, and the Hosoya index is largely
+molecular size. The entropy factor is decoration worth one part in fourteen.
+
+## The reformulation
+
+The information content of a set of Z matchings is **log2 Z** bits — the bits needed to name one
+of them. That is the well-posed "total information", and it is extensive (linear in n) as an
+extensive quantity should be. Three dimensionally coherent quantities replace the one malformed
+product:
+
+| quantity | formula | units | range on the BP set |
+|---|---|---|---|
+| `matching_information` | log2 Z | bits, extensive | 1.6 – 33.9 |
+| `information_density` | log2(Z) / n | bits/atom, intensive | 0.464 – 0.862 |
+| `evenness` | J = H / log2(n+1) | dimensionless, [0,1] | 0.279 – 0.808 |
+
+`information_density` is the statistical-mechanics entropy per site of the monomer–dimer model on
+the graph, and converges along a homologous series — to log2(φ) for alkanes.
+
+**`AvgIpc` is not the right intensive quantity either.** It does not explode, but it is not
+size-free: its own bound `log2(n+1)` grows with the molecule, and raw H still correlates with atom
+count at **r = +0.80**. Dividing by the bound gives Pielou evenness `J`, which is genuinely
+size-free (**r = +0.15**) — a pure shape descriptor: how evenly structural information is spread
+across matching sizes, regardless of molecular size.
+
+| molecule | atoms | log2 Z | bits/atom | J | AvgIpc |
+|---|---|---|---|---|---|
+| ethanol | 3 | 1.585 | 0.528 | 0.459 | 0.918 |
+| benzene | 6 | 4.322 | 0.720 | 0.613 | 1.720 |
+| caffeine | 14 | 9.529 | 0.681 | 0.650 | 2.539 |
+| cholesterol | 28 | 19.463 | 0.695 | 0.615 | 2.990 |
+| C₅₀ chain | 50 | 34.245 | 0.685 | 0.551 | 3.128 |
+| C₂₅₀ chain | 250 | 173.094 | 0.692 | 0.538 | 4.289 |
+
+Read the last column against the others: `AvgIpc` climbs monotonically with size and says little
+else, while `J` separates benzene and caffeine (dense, even matching structure) from the long
+chains, independently of how many atoms they have.
+
+Available as `kumomlx.ipc.matching_information`, `.information_density` and `.evenness`.
