@@ -35,10 +35,10 @@ a.plot(ns, bound, color="#999999", ls=":", lw=1.6, label=r"theoretical bound $\l
 a.plot(ns, ex, "o-", color="#4C78A8", ms=5, lw=1.8, label="exact (integer characteristic polynomial)")
 a.plot(ns, rk, "s-", color="#E45756", ms=5, lw=1.8, label="RDKit 2025.09.4 (float64)")
 a.axvspan(110, 160, color="#E45756", alpha=0.08)
-a.annotate("RDKit collapses:\nan entropy cannot decrease", xy=(120, rk[11]), xytext=(60, 1.0),
+a.annotate("computed values decrease;\nan entropy cannot", xy=(120, rk[11]), xytext=(58, 1.1),
            fontsize=9, color="#A33", arrowprops=dict(arrowstyle="->", color="#A33", lw=1.2))
 a.set_xlabel("n   (carbon chain length)"); a.set_ylabel(r"AvgIpc   (bits)")
-a.set_title("RDKit's AvgIpc stops being monotone above ~110 atoms", fontsize=11)
+a.set_title("AvgIpc: float64 recursion vs exact arithmetic", fontsize=11)
 a.legend(fontsize=8.5, loc="upper left"); a.grid(alpha=0.25)
 
 b.scatter(log2S, log2Ipc, s=12, color="#4C78A8", alpha=0.55, edgecolors="none")
@@ -46,7 +46,7 @@ lim = [min(log2S.min(), log2Ipc.min()) - 1, max(log2S.max(), log2Ipc.max()) + 1]
 b.plot(lim, lim, color="#999999", ls="--", lw=1.2)
 b.set_xlabel(r"$\log_2 S$  ($S$ = Hosoya index, the matching count)")
 b.set_ylabel(r"$\log_2 \mathrm{Ipc}$")
-b.set_title(f"Ipc is the Hosoya index: $R^2$ = {r2:.4f}", fontsize=11)
+b.set_title(f"$\\log_2$Ipc against $\\log_2 S$:  $R^2$ = {r2:.4f}", fontsize=11)
 b.text(0.04, 0.93, f"n = {len(log2S)} molecules, 3–49 atoms\n"
        r"$\log_2 S$ spans 32.3 bits," "\n" r"$\log_2 H$ only 2.24",
        transform=b.transAxes, fontsize=9, va="top",

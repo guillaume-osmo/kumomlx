@@ -62,7 +62,7 @@ for x, lab in ((16.5, "enumeration ends"), (24.5, "exact $Z$ ends")):
     ax.axvline(x, color="#CCCCCC", lw=1, ls="-.")
     ax.text(x+0.4, 6.5, lab, fontsize=8.5, color="#777777", rotation=90, va="bottom")
 ax.set_ylabel(r"$\log_2 Z$   (bits)")
-ax.set_title("Maximum matching count of a chemical graph ($\\Delta \\leq 4$), and its approximations", fontsize=12)
+ax.set_title("$Z_{\\max}$ for chemical graphs ($\\Delta \\leq 4$) and its approximations", fontsize=12)
 ax.legend(fontsize=8.5, loc="upper left", framealpha=0.95); ax.grid(alpha=0.25)
 
 rf = (FIT_C*alln + FIT_B) - alll

@@ -28,7 +28,7 @@ a.annotate(f"variance ratio {vr:.2f}\nLevene $p = 1.4\\times10^{{-146}}$\n"
            bbox=dict(boxstyle="round,pad=0.4", fc="#F3F8F2", ec="#54A24B"))
 a.text(0.02, 0.60, "0 = n-alkane", transform=a.transAxes, fontsize=8.5, color="#444444")
 a.set_xlabel("dIpc   (bits relative to the n-alkane)"); a.set_ylabel("density")
-a.set_title("Terpenoids are narrower and more branched", fontsize=11)
+a.set_title("dIpc distribution, terpenoid vs size-matched control", fontsize=11)
 a.legend(fontsize=8, loc="upper left"); a.grid(alpha=0.2); a.set_xlim(-3, 3)
 
 bands = [(6, 13), (14, 20), (21, 28), (29, 40), (41, 60)]
@@ -44,7 +44,7 @@ for k, (p, hgt) in enumerate(zip(ps, np.maximum(st, sc))):
     b.text(k, hgt + 0.035, f"{sc[k]**2/st[k]**2:.2f}×", ha="center", fontsize=9, color="#333333")
 b.set_xticks(i); b.set_xticklabels(xs)
 b.set_xlabel("heavy atoms"); b.set_ylabel("s.d. of dIpc   (bits)")
-b.set_title("The gap holds at every size (variance ratio annotated)", fontsize=11)
+b.set_title("Standard deviation by size band (variance ratio annotated)", fontsize=11)
 b.legend(fontsize=9, loc="upper left"); b.grid(alpha=0.2, axis="y")
 b.set_ylim(0, max(sc) * 1.22)
 fig.tight_layout()
