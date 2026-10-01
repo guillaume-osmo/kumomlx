@@ -1,0 +1,12 @@
+kumomlx
+Copyright (c) 2026 Guillaume Godin
+
+This project is an independent reimplementation, in MLX, of the Kumo-Tabular
+architecture published by NVIDIA Corporation as part of the `structured-data-models`
+project, which is licensed under the Apache License, Version 2.0.
+
+No source code from that project is redistributed in this repository, and no model
+weights are redistributed. Running this code requires obtaining the upstream package
+and checkpoint separately, under their own licenses and terms.
+
+Apache License 2.0: http://www.apache.org/licenses/LICENSE-2.0

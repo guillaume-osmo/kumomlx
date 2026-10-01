@@ -1,0 +1,7 @@
+mlx>=0.32.0
+numpy>=1.26
+safetensors>=0.4
+torch>=2.4
+# NVIDIA's package provides the preprocessing recipe used by kumo_hybrid.KumoMLX.
+# Install it separately; it is not vendored here.
+# structured-data-models

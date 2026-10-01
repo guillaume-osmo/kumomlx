@@ -1,0 +1,10 @@
+export/
+site/
+ref/
+__pycache__/
+*.pyc
+*.bak
+*.safetensors
+*.npz
+.DS_Store
+.venv/
