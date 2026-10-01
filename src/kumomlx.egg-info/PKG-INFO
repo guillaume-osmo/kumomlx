@@ -1,3 +1,53 @@
+Metadata-Version: 2.4
+Name: kumomlx
+Version: 0.1.0
+Summary: NVIDIA Kumo-Tabular on Apple Silicon via MLX
+Author: Guillaume Godin
+License: MIT License
+        
+        Copyright (c) 2026 Guillaume Godin
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
+Project-URL: Homepage, https://github.com/guillaume-osmo/kumomlx
+Project-URL: Issues, https://github.com/guillaume-osmo/kumomlx/issues
+Keywords: mlx,apple-silicon,tabular,in-context-learning,foundation-model
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Environment :: GPU
+Classifier: Operating System :: MacOS :: MacOS X
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+License-File: NOTICE
+Requires-Dist: mlx>=0.32.0
+Requires-Dist: numpy>=1.26
+Requires-Dist: safetensors>=0.4
+Requires-Dist: torch>=2.4
+Requires-Dist: huggingface-hub>=0.23
+Provides-Extra: recipe
+Requires-Dist: structured-data-models; extra == "recipe"
+Provides-Extra: dev
+Requires-Dist: pytest>=8; extra == "dev"
+Dynamic: license-file
+
 # kumomlx
 
 NVIDIA's **Kumo-Tabular** in-context tabular model, reimplemented in [MLX](https://github.com/ml-explore/mlx)
@@ -17,69 +67,6 @@ pred  = model.predict(x_context, y_context, x_query)   # numpy in, numpy out
 
 **4.7x faster than torch on CPU** end to end (0.14 s vs 0.67 s), 10x on the network alone,
 measured on 256 context + 64 query rows.
-
-## Install
-
-```bash
-pip install git+https://github.com/guillaume-osmo/kumomlx
-pip install structured-data-models      # NVIDIA's preprocessing recipe, used by KumoMLX
-```
-
-Weights are resolved and cached on first use (~863 MB from the Hugging Face Hub, converted once
-to safetensors under `~/.cache/kumomlx`). Point `KUMOMLX_WEIGHTS` at an existing export to skip
-that, or `KUMOMLX_CACHE` to move the cache.
-
-## Example: boiling point from 800 molecules, with no training
-
-```bash
-python examples/boiling_point.py
-```
-
-The context rows *are* the fit — there is no optimiser and no epochs. 800 labelled molecules and
-200 unlabelled ones go in together; one forward pass returns a predictive distribution for each
-query.
-
-```
-1000 molecules, 217 RDKit descriptors
-boiling point -65 to 1023 C (sd 121.6)
-context 800 / query 200
-
-                MAE     RMSE       R2  Spearman
-Kumo          12.07    30.35   0.9357    0.9758
-ridge         17.45    33.45   0.9219    0.9662
-
-in-context prediction of 200 molecules: 5.59 s (27.9 ms each), no training
-90% interval covers 90.0% of held-out molecules (median width 30 C)
-```
-
-The ridge baseline is there because an impressive error means nothing unaccompanied: boiling
-point is largely driven by molecular size, so a linear model already reaches R² 0.92. The 90%
-interval covering 90.0% is not tuned — it is read straight off the 999-quantile head.
-
-The largest residual is `O=C(O)c1cc(Cl)cc(Cl)c1` with a recorded boiling point of 0.0 °C, which
-is a label error in the source data; dichlorobenzoic acids boil near 300 °C, which is what the
-model predicts.
-
-```python
-from kumomlx import KumoMLX, load_boiling_point
-
-data = load_boiling_point()
-(xc, yc), (xq, yq), _ = data.split(n_context=800)
-
-model = KumoMLX()
-pred    = model.predict(xc, yc, xq)             # point estimates
-q       = model.quantiles(xc, yc, xq)           # [n, 999] predictive distribution
-lo, hi  = model.predict_interval(xc, yc, xq, level=0.9)
-```
-
-## Descriptors
-
-The bundled dataset carries the full `Descriptors.descList` block with one repair: raw `Ipc`
-grows super-exponentially with molecule size and leaves float32 range near 170 atoms, and
-RDKit's `AvgIpc` stops being monotone from about 110 atoms through float64 cancellation in the
-characteristic polynomial. Both are replaced by log-space forms and emitted as NaN past their
-validity limit. **[DESCRIPTORS.md](DESCRIPTORS.md)** has the derivation, the measurements and the
-exact-arithmetic check.
 
 ## Accuracy
 

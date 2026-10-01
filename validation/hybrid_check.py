@@ -8,12 +8,12 @@ import os
 HERE = os.environ.get("KUMOMLX_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if os.path.isdir(f"{HERE}/site"):            # optional vendored install of the recipe package
     sys.path.insert(0, f"{HERE}/site")
-sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(HERE, "src"))
 import mlx.core as mx
 import sdm.models as sdm_models
 from safetensors.torch import load_file
 from sdm.task import Task
-from kumo_hybrid import KumoMLX
+from kumomlx import KumoMLX
 
 g = np.load(f"{HERE}/export/golden.npz")
 xc, yc, xq = g["x_context"], g["y_context"], g["x_query"]

@@ -25,11 +25,11 @@ import os
 HERE = os.environ.get("KUMOMLX_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if os.path.isdir(f"{HERE}/site"):            # optional vendored install of the recipe package
     sys.path.insert(0, f"{HERE}/site")
-sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(HERE, "src"))
 import mlx.core as mx
 import sdm.models as SM
 from sdm.task import Task
-import kumo_mlx as K
+from kumomlx import network as K
 
 _MASK = mx.array(0xFFFFE000, mx.uint32)   # keep sign + exponent + top 11 mantissa bits
 

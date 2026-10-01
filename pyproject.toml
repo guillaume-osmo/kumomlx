@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kumomlx"
+version = "0.1.0"
+description = "NVIDIA Kumo-Tabular on Apple Silicon via MLX"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Guillaume Godin" }]
+requires-python = ">=3.11"
+keywords = ["mlx", "apple-silicon", "tabular", "in-context-learning", "foundation-model"]
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Environment :: GPU",
+    "Operating System :: MacOS :: MacOS X",
+]
+dependencies = [
+    "mlx>=0.32.0",
+    "numpy>=1.26",
+    "safetensors>=0.4",
+    "torch>=2.4",
+    "huggingface-hub>=0.23",
+]
+
+[project.optional-dependencies]
+# The preprocessing recipe comes from NVIDIA's package. It is a separate install because it is
+# the only dependency that is not a plain PyPI wheel for every platform; `kumomlx.network` and
+# `kumomlx.weights` work without it.
+recipe = ["structured-data-models"]
+dev = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://github.com/guillaume-osmo/kumomlx"
+Issues = "https://github.com/guillaume-osmo/kumomlx/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+kumomlx = ["data/*.csv"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -8,7 +8,7 @@ import os
 HERE = os.environ.get("KUMOMLX_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if os.path.isdir(f"{HERE}/site"):            # optional vendored install of the recipe package
     sys.path.insert(0, f"{HERE}/site")
-sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(HERE, "src"))
 import mlx.core as mx
 mx.set_default_device(mx.cpu)
 

@@ -184,9 +184,22 @@ class ICLBlock:
         return _linear(_gelu(_linear(h, self.hw1, self.hb1)), self.hw2, self.hb2)
 
 
-def load_weights(path: str, prefix: str = "models.regression.") -> dict:
-    """Load the exported checkpoint, dropping the task prefix so keys match the module names."""
-    raw = mx.load(path)
+def load_weights(path, prefix: str | None = None) -> dict:
+    """Load a checkpoint, dropping any task prefix so the keys match the module names.
+
+    Two key layouts occur in the wild: the upstream ``regressor.pt`` holds the inner model's
+    state dict with bare names, while a dump of the outer `KumoTabular` wrapper prefixes every
+    key with ``models.regression.``. With ``prefix=None`` the layout is detected rather than
+    assumed, so either file loads.
+    """
+    raw = mx.load(str(path))
+    if prefix is None:
+        for cand in ("models.regression.", "models.classification."):
+            if any(k.startswith(cand) for k in raw):
+                prefix = cand
+                break
+        else:
+            prefix = ""
     return {k[len(prefix):]: v for k, v in raw.items() if k.startswith(prefix)}
 
 
