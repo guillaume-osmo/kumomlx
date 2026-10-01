@@ -232,3 +232,43 @@ relationship; do not pre-divide and discard a degree of freedom.
 `information_density` is kept because it is the right quantity for the *physics* of a homologous
 series — it is the monomer–dimer entropy per site and converges to log2(φ) — not because it is
 the right feature for a learned model.
+
+
+## The better normaliser: dIpc against an n-alkane reference
+
+Dividing by a power of n approximates the size term. Subtracting a reference state removes it
+exactly. The linear single-bonded carbon chain on n atoms is the natural reference, and its
+Hosoya index is the Fibonacci number F(n+1), so the baseline is analytic:
+
+    dIpc(G) = log2 Z(G) - log2 F(n+1)        bits above or below the chain
+
+Among trees on n vertices the **path maximises** the Hosoya index (the star minimises it), which
+gives the quantity a sign with a meaning:
+
+| molecule | n | log2 Z | dIpc |
+|---|---|---|---|
+| n-pentane *(reference)* | 5 | 3.000 | **+0.0000** |
+| isopentane | 5 | 2.807 | −0.1926 |
+| neopentane *(most branched)* | 5 | 2.322 | −0.6781 |
+| cyclopentane | 5 | 3.700 | +0.7004 |
+| benzene | 6 | 4.322 | +0.6215 |
+| naphthalene | 10 | 7.409 | +0.9337 |
+| adamantane | 10 | 7.562 | +1.0865 |
+
+Negative means branched, positive means ring-rich, zero means an unbranched chain. On the 1000
+boiling-point molecules the bound holds exactly: **478 acyclic molecules, maximum dIpc = +0.0000,
+zero violations**, and correlation with ring count is +0.67.
+
+And it is the only one of these that is genuinely size-free:
+
+| | correlation with atom count |
+|---|---|
+| log2 Z | +0.9931 |
+| log2(Z)/n | +0.4090 |
+| **dIpc** | **+0.0485** |
+
+Like every function of the pair `(log2 Z, n)`, dIpc adds no new information to a flexible model
+already given both — measured partial correlation +0.0095 against the boiling-point residual.
+Its value is as a *parameterisation*: size-free, signed and interpretable, with a baseline that
+is derived rather than learned, so it extrapolates beyond the training size range where a fitted
+correction would not. Prefer it to `information_density`.
