@@ -32,7 +32,8 @@ class _KumoHybrid:
 
     task: str = ""
 
-    def __init__(self, weights: str | Path | None = None, size: str = "large"):
+    def __init__(self, weights: str | Path | None = None, size: str = "large",
+                 cache_limit_gb: float | None = 1.0):
         import mlx.core as mx                           # noqa: PLC0415
         import sdm.models as sdm_models                 # noqa: PLC0415
         import torch                                    # noqa: PLC0415
@@ -64,6 +65,12 @@ class _KumoHybrid:
 
         inner = self._torch.models[task]
         outer, _mx, _torch = self, mx, torch
+        # MLX keeps every freed buffer for reuse, and a forward pass frees buffers of many
+        # different shapes, so the pool only grows: at 1,000 rows x 217 columns it reached
+        # 17 GB around 4 GB of live arrays, and the process swapped. Bounding it cost nothing
+        # (1.76 s vs 2.00 s). The limit is process-global in MLX, so it is applied around each
+        # forward and the caller's setting restored afterwards.
+        limit = None if cache_limit_gb is None else int(cache_limit_gb * 1e9)
 
         def one(x, y, categorical):
             return outer._icl(outer._row_embedding(x, y, categorical), y)
@@ -87,11 +94,20 @@ class _KumoHybrid:
             ys = y.expand(*lead, y.shape[-1]).reshape(len(xs), -1)
             ms = categorical_mask.expand(*lead, n_cols).reshape(len(xs), n_cols)
             y_dtype = np.int64 if outer.task == "classification" else np.float32
-            outs = [one(arr(xi), arr(yi, y_dtype), arr(mi, None).astype(_mx.bool_))
-                    for xi, yi, mi in zip(xs, ys, ms)]
-            out = _mx.stack(outs).reshape(*lead, *outs[0].shape)
-            _mx.eval(out)
-            return _torch.from_numpy(np.array(out))
+            previous = None if limit is None else _mx.set_cache_limit(limit)
+            try:
+                outs = []
+                for xi, yi, mi in zip(xs, ys, ms):
+                    o = one(arr(xi), arr(yi, y_dtype), arr(mi, None).astype(_mx.bool_))
+                    _mx.eval(o)                         # one table's graph at a time
+                    outs.append(o)
+                out = _mx.stack(outs).reshape(*lead, *outs[0].shape)
+                result = _torch.from_numpy(np.array(out))
+                del outs, out
+            finally:
+                if previous is not None:
+                    _mx.set_cache_limit(previous)
+            return result
 
         inner.forward = mlx_forward
 
@@ -115,6 +131,8 @@ class KumoMLX(_KumoHybrid):
         weights: path to MLX-ready safetensors. ``None`` resolves (and converts) the upstream
             checkpoint via :func:`kumomlx.weights.resolve`.
         size: only ``"large"`` is implemented by the port.
+        cache_limit_gb: MLX buffer-cache bound during each forward; ``None`` leaves MLX's
+            process-wide setting alone (unbounded by default, which swaps at ~1,000 rows).
     """
 
     task = "regression"
@@ -164,6 +182,7 @@ class KumoMLXClassifier(_KumoHybrid):
         weights: path to MLX-ready classifier safetensors. ``None`` resolves (and converts)
             ``large/classifier.pt`` via :func:`kumomlx.weights.resolve`.
         size: only ``"large"`` is implemented by the port.
+        cache_limit_gb: as for :class:`KumoMLX`.
     """
 
     task = "classification"

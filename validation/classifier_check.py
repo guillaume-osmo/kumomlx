@@ -170,5 +170,42 @@ ref_pred = out.numerical.float().numpy().reshape(64, -1).mean(1)
 got = KumoMLX(weights=reg_path).predict(xr[:256], yr[:256], xr[256:], seed=0)
 check("regressor, MLX vs torch, seeded", np.abs(got - ref_pred).max(), 1e-4)
 
+# 6. the real classifier, on real molecules, when its weights are cached (never downloads)
+cls_path = W.cache_dir() / "kumo_large_classification.safetensors"
+if cls_path.exists():
+    import time
+
+    from kumomlx import load_boiling_point
+
+    print("\n6. real classifier weights, 217 RDKit descriptors, boils above the median?")
+    tcls = sdm_models.KumoTabular(task=Task.classification, size="large",
+                                  pretrained=False, device="cpu").eval()
+    sd = load_file(str(cls_path))
+    tcls.load_state_dict({f"models.classification.{k}": v for k, v in sd.items()}
+                         if not any(k.startswith("models.") for k in sd) else sd, strict=False)
+    data = load_boiling_point()
+    (xc, bc), (xq, bq), _ = data.split(n_context=400, seed=0)
+    xq, bq = xq[:100], bq[:100]
+    med = np.median(bc)
+    yc, yq = (bc > med).astype(int), (bq > med).astype(int)
+    t0 = time.perf_counter()
+    with torch.no_grad():
+        out = tcls(x_context=torch.tensor(xc), y_context=torch.tensor(yc).long().unsqueeze(-1),
+                   x_query=torch.tensor(xq), generator=torch.Generator().manual_seed(0))
+    t_torch = time.perf_counter() - t0
+    order = np.argsort([int(c) for c in out.columns[Stype.numerical]])
+    p_t = out.numerical.float().numpy()[:, order]
+    real = KumoMLXClassifier(weights=cls_path)
+    real.predict_proba(xc[:50], yc[:50], xq[:5], seed=0)          # warm the kernels
+    t0 = time.perf_counter()
+    p_m = real.predict_proba(xc, yc, xq, seed=0)
+    t_mlx = time.perf_counter() - t0
+    check("real weights, MLX vs torch, seeded", np.abs(p_m - p_t).max(), 1e-4)
+    acc = float((p_m.argmax(1) == yq).mean())
+    print(f"        accuracy on 100 held-out molecules: {acc:.2f}; "
+          f"torch CPU 1-thread {t_torch:.2f} s, MLX {t_mlx:.2f} s (not a benchmark: see classifier_speed.py)")
+else:
+    print(f"\n6. skipped: no cached classifier at {cls_path} (this script never downloads)")
+
 print(f"\n{'ALL PASS' if not failures else 'FAILURES: ' + ', '.join(failures)}")
 sys.exit(1 if failures else 0)
