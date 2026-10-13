@@ -84,6 +84,87 @@ q       = model.quantiles(xc, yc, xq)           # [n, 999] predictive distributi
 lo, hi  = model.predict_interval(xc, yc, xq, level=0.9)
 ```
 
+## Classification
+
+The classifier is a separate upstream checkpoint (`large/classifier.pt`) on the same network. Two
+things differ, and both are read from the weights rather than configured. The context labels
+enter through a class table (`y_emb`) where the regressor maps the value linearly (`y_lin`). The
+head emits 10 logits instead of 999 quantiles. Ten classes are scored natively. Larger problems
+go through the upstream ECOC wrapper, which hands the network a leading task dimension, and the
+port runs that too.
+
+```python
+from kumomlx import KumoMLXClassifier
+
+clf   = KumoMLXClassifier()                        # resolves large/classifier.pt on first use
+proba = clf.predict_proba(xc, labels, xq)          # [n, n_classes], columns = clf.classes_
+pred  = clf.predict(xc, labels, xq)                # original label values
+```
+
+Labels can be any sortable values (ints, strings, bools). `classes_` comes from each call's
+context, so a class absent from the context gets no column. A regressor checkpoint handed to the
+classifier is refused. Without that check it loads cleanly, because every shape that matters is
+shared, and its quantiles come back read as logits.
+
+Parity, from `validation/classifier_check.py` on a **randomly initialised** classifier. That run
+exercises every weight the port reads and needs no download. A random network is the stricter
+test here, because its logits are not pulled towards a confident answer that could hide a wrong
+label path:
+
+| | max abs vs torch |
+|---|---|
+| raw logits at the inner seam | 9.5e-07 (4.3e-06 of their spread) |
+| probabilities, 2 and 3 classes | 6.0e-08 |
+| probabilities, 12 classes (ECOC) | 5.2e-08 |
+| torch vs torch, **unseeded** (the recipe's own randomness) | 1.8e-01 to 2.2e-01 |
+
+The recipe also shifts the class codes at random per estimator, so classification is seeded by
+default for the same reason as regression. Unseeded, the gap is four orders of magnitude larger
+than the port's.
+
+With the real `large/classifier.pt`, MLX agrees with torch to **1.1e-05** in probability (400
+context molecules, 217 descriptors). `examples/boiling_point_classes.py` turns the bundled
+molecules into two tasks, with cut points taken from the context only:
+
+```
+                        accuracy     AUC
+above the median  Kumo     0.960   0.987
+                  ridge    0.940   0.976
+tercile           Kumo     0.955   0.993
+                  ridge    0.795   0.911
+800 context / 200 query, ~1.8-2.0 s per task, no training
+```
+
+Speed, one backend per process (`validation/classifier_speed.py`), 217 columns:
+
+| context + query | MLX (GPU) | torch (CPU, 8 threads) |
+|---|---|---|
+| 256 + 64 | 0.63 s | 1.19 s |
+| 400 + 100 | 0.94 s | 1.76 s |
+| 800 + 200 | 1.75 s | 3.50 s |
+
+### Memory: MLX's buffer cache, and why there is a limit
+
+MLX keeps every freed buffer for reuse. A forward pass frees buffers of many different shapes,
+so the pool only grows: at 1,000 rows × 217 columns it reached **17 GB around 4 GB of live
+arrays**, and on a 24 GB machine the process swapped, which made MLX look 3x *slower* than
+torch. Both hybrids therefore bound the cache to `cache_limit_gb=1.0` during each forward and
+restore the caller's setting afterwards. This costs nothing: 1.76 s bounded vs 2.00 s unbounded
+at 1,000 rows. Pass `cache_limit_gb=None` to leave MLX's process-wide setting alone.
+
+What remains is real working memory, almost all of it in the row embedding, and it grows
+linearly with rows (`validation/memory_profile.py`):
+
+| rows × columns | row embedding | ICL stack |
+|---|---|---|
+| 320 × 217 | 1.8 GB | 0.3 GB |
+| 1,000 × 217 | 3.2 GB | 0.8 GB |
+| 2,000 × 217 | 6.4 GB | 1.7 GB |
+
+A 6,000-row context at this width would need about 19 GB. Upstream torch avoids this by
+writing the row embedding into a preallocated buffer in row batches. That is the next step here
+(see Not done).
+
 ## Descriptors
 
 The bundled dataset carries the full `Descriptors.descList` block with one repair: raw `Ipc`
@@ -175,6 +256,7 @@ row emb    6 x [ col_block: ISAB over rows, 256 inducing points, keyed on contex
 ICL        24 layers, 1024 ch, 16 heads x 64, QK-norm, log-length query scaling; the context
            attends with all heads, queries with the leading 2 (grouped-query)
 head       1024 -> 2048 -> 999 quantiles; the mean over the grid is the point estimate
+           (classifier: 1024 -> 2048 -> 10 logits, with labels entering through y_emb)
 ```
 
 ## Layout
@@ -187,6 +269,10 @@ validation/float64_oracle.py            the structural test described above
 validation/probe_block.py               one block, component by component, in float64
 validation/weight_audit.py              confirms both sides hold identical weights
 validation/hybrid_check.py              end-to-end hybrid vs torch
+validation/classifier_check.py          classification head vs torch: seam, end to end, ECOC
+validation/classifier_speed.py          one backend per process, three context sizes
+validation/memory_profile.py            MLX peak allocation by stage and size
+examples/boiling_point_classes.py       binary and three-class tasks on the bundled molecules
 validation/mlx_float64_traps.py         demonstrates the two MLX float64 traps
 experiments/double_single.py            the 48-bit split
 experiments/accumulation_vs_products.py separates the two error mechanisms
@@ -205,8 +291,10 @@ shared storage — clone before saving.
 
 ## Not done
 
-Classification (the ECOC path), the `small` and `medium` sizes, and batching several tables per
-call. Benchmarked only at 256 context rows; the CUDA arm runs 9,190-row contexts and MLX memory
+Row-batched evaluation of the row embedding, which is what large contexts need (memory above).
+The `small` and `medium` sizes, and true batching of several tables per call: estimators and
+ECOC tasks run one table at a time. The upstream `fit`/`predict` KV cache is not ported; the
+hybrid raises on it rather than replaying an empty context. Benchmarked only at 256 context rows; the CUDA arm runs 9,190-row contexts and MLX memory
 behaviour at that scale is unmeasured.
 
 ## Attribution
