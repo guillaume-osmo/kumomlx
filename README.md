@@ -84,6 +84,44 @@ q       = model.quantiles(xc, yc, xq)           # [n, 999] predictive distributi
 lo, hi  = model.predict_interval(xc, yc, xq, level=0.9)
 ```
 
+## Classification
+
+The classifier is a separate upstream checkpoint (`large/classifier.pt`) on the same network. Two
+things differ, and both are read from the weights rather than configured. The context labels
+enter through a class table (`y_emb`) where the regressor maps the value linearly (`y_lin`). The
+head emits 10 logits instead of 999 quantiles. Ten classes are scored natively. Larger problems
+go through the upstream ECOC wrapper, which hands the network a leading task dimension, and the
+port runs that too.
+
+```python
+from kumomlx import KumoMLXClassifier
+
+clf   = KumoMLXClassifier()                        # resolves large/classifier.pt on first use
+proba = clf.predict_proba(xc, labels, xq)          # [n, n_classes], columns = clf.classes_
+pred  = clf.predict(xc, labels, xq)                # original label values
+```
+
+Labels can be any sortable values (ints, strings, bools). `classes_` comes from each call's
+context, so a class absent from the context gets no column. A regressor checkpoint handed to the
+classifier is refused. Without that check it loads cleanly, because every shape that matters is
+shared, and its quantiles come back read as logits.
+
+Parity, from `validation/classifier_check.py` on a **randomly initialised** classifier. That run
+exercises every weight the port reads and needs no download. A random network is the stricter
+test here, because its logits are not pulled towards a confident answer that could hide a wrong
+label path:
+
+| | max abs vs torch |
+|---|---|
+| raw logits at the inner seam | 9.5e-07 (4.3e-06 of their spread) |
+| probabilities, 2 and 3 classes | 6.0e-08 |
+| probabilities, 12 classes (ECOC) | 5.2e-08 |
+| torch vs torch, **unseeded** (the recipe's own randomness) | 1.8e-01 to 2.2e-01 |
+
+The recipe also shifts the class codes at random per estimator, so classification is seeded by
+default for the same reason as regression. Unseeded, the gap is four orders of magnitude larger
+than the port's.
+
 ## Descriptors
 
 The bundled dataset carries the full `Descriptors.descList` block with one repair: raw `Ipc`
@@ -175,6 +213,7 @@ row emb    6 x [ col_block: ISAB over rows, 256 inducing points, keyed on contex
 ICL        24 layers, 1024 ch, 16 heads x 64, QK-norm, log-length query scaling; the context
            attends with all heads, queries with the leading 2 (grouped-query)
 head       1024 -> 2048 -> 999 quantiles; the mean over the grid is the point estimate
+           (classifier: 1024 -> 2048 -> 10 logits, with labels entering through y_emb)
 ```
 
 ## Layout
@@ -187,6 +226,7 @@ validation/float64_oracle.py            the structural test described above
 validation/probe_block.py               one block, component by component, in float64
 validation/weight_audit.py              confirms both sides hold identical weights
 validation/hybrid_check.py              end-to-end hybrid vs torch
+validation/classifier_check.py          classification head vs torch: seam, end to end, ECOC
 validation/mlx_float64_traps.py         demonstrates the two MLX float64 traps
 experiments/double_single.py            the 48-bit split
 experiments/accumulation_vs_products.py separates the two error mechanisms
@@ -205,8 +245,9 @@ shared storage — clone before saving.
 
 ## Not done
 
-Classification (the ECOC path), the `small` and `medium` sizes, and batching several tables per
-call. Benchmarked only at 256 context rows; the CUDA arm runs 9,190-row contexts and MLX memory
+The `small` and `medium` sizes, and true batching of several tables per call: estimators and
+ECOC tasks run one table at a time. The upstream `fit`/`predict` KV cache is not ported; the
+hybrid raises on it rather than replaying an empty context. Benchmarked only at 256 context rows; the CUDA arm runs 9,190-row contexts and MLX memory
 behaviour at that scale is unmeasured.
 
 ## Attribution

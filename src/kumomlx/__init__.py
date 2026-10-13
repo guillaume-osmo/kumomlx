@@ -9,15 +9,16 @@
 
 from kumomlx.datasets import BoilingPoint, load_boiling_point
 
-__all__ = ["KumoMLX", "BoilingPoint", "load_boiling_point", "network", "weights", "__version__"]
-__version__ = "0.1.0"
+__all__ = ["KumoMLX", "KumoMLXClassifier", "BoilingPoint", "load_boiling_point", "network",
+           "weights", "__version__"]
+__version__ = "0.2.0"
 
 
 def __getattr__(name):
-    # KumoMLX pulls in torch and the upstream recipe package; importing kumomlx should not.
-    if name == "KumoMLX":
-        from kumomlx.hybrid import KumoMLX
-        return KumoMLX
+    # The hybrids pull in torch and the upstream recipe package; importing kumomlx should not.
+    if name in ("KumoMLX", "KumoMLXClassifier"):
+        from kumomlx import hybrid
+        return getattr(hybrid, name)
     if name in ("network", "weights"):
         import importlib
         return importlib.import_module(f"kumomlx.{name}")

@@ -33,10 +33,26 @@ def test_load_weights_detects_key_layout(tmp_path):
     mx = pytest.importorskip("mlx.core")
     from kumomlx import network
 
-    for prefix in ("", "models.regression."):
+    for prefix in ("", "models.regression.", "models.classification."):
         p = tmp_path / f"w{len(prefix)}.safetensors"
         mx.save_safetensors(str(p), {f"{prefix}icl_block.norm.weight": mx.ones((4,))})
         assert list(network.load_weights(p)) == ["icl_block.norm.weight"]
+
+
+def test_label_embedding_is_chosen_by_the_weights():
+    """Classifier checkpoints carry a class table (`y_emb`), regressors a linear map (`y_lin`).
+    The keys decide the path, so a classifier can never run its labels through the linear map."""
+    mx = pytest.importorskip("mlx.core")
+    from kumomlx import network
+
+    table = mx.arange(12, dtype=mx.float32).reshape(3, 4)
+    cat = network.LabelEmbedding({"p.y_emb.weight": table}, "p")
+    assert cat.is_categorical
+    assert (np.array(cat(mx.array([2, 0, 2]))) == np.array(table)[[2, 0, 2]]).all()
+
+    lin = network.LabelEmbedding({"p.y_lin.weight": 2 * mx.ones((4, 1))}, "p")
+    assert not lin.is_categorical
+    assert np.allclose(np.array(lin(mx.array([1.5, -1.0]))), [[3.0] * 4, [-2.0] * 4])
 
 
 def test_unsupported_size_is_refused(monkeypatch):

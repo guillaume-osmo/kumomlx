@@ -1,4 +1,4 @@
-"""MLX port of NVIDIA Kumo-Tabular (regression head), for Apple Silicon.
+"""MLX port of NVIDIA Kumo-Tabular (regression and classification heads), for Apple Silicon.
 
 Ported from the Apache-2.0 reference in `sdm.models.kumo.tabular`. Built stage by stage against
 activations captured from the reference model, because every component here is shape-compatible
@@ -14,7 +14,13 @@ Architecture, as read from the checkpoint and the reference forward passes (size
     ICL block        label embedding added to context rows, then 24 layers of
                      cross-attention from all rows to the context rows, 1024 channels,
                      16 query heads of 64; the query pass uses only the first 2 KV heads
-    head             1024 -> 2048 -> 999 quantiles
+    head             1024 -> 2048 -> 999 quantiles (regressor.pt) or 10 logits (classifier.pt)
+
+The classifier is a separate checkpoint with the same network. Only two things differ, and both
+are read from the weights rather than configured: the context labels enter through a lookup table
+(`y_emb`, one row per class) instead of a bias-free linear map of the value (`y_lin`), and the head
+emits 10 class logits instead of 999 quantiles. Ten is the native class capacity; the upstream
+ECOC wrapper slices the first K logits for K <= 10 and splits larger problems into 10-class tasks.
 
 Two details that are easy to get wrong and are load-bearing:
 
@@ -151,13 +157,39 @@ class Block:
         return tmp + h
 
 
+class LabelEmbedding:
+    """How the context labels enter the network: a class lookup or a linear map of the value.
+
+    The classifier checkpoint holds ``y_emb.weight`` ``[num_classes, D]`` (an ``Embedding`` over
+    integer class codes); the regressor holds ``y_lin.weight`` ``[D, 1]`` (a bias-free ``Linear``
+    over the standardised target). They sit at the same two places in the network, so which one
+    applies is decided by the keys present, never by a flag that could disagree with the weights.
+    """
+
+    def __init__(self, w: dict, prefix: str):
+        self.table = w.get(f"{prefix}.y_emb.weight")
+        self.weight = None if self.table is not None else w[f"{prefix}.y_lin.weight"]
+        self.bias = w.get(f"{prefix}.y_lin.bias")
+
+    @property
+    def is_categorical(self) -> bool:
+        return self.table is not None
+
+    def __call__(self, y: mx.array) -> mx.array:            # [R_train] -> [R_train, D]
+        if self.table is not None:
+            # Codes arrive as int64 from the recipe; a float code would silently truncate, so
+            # the cast is explicit. Out-of-range codes are the caller's error (the recipe never
+            # emits one), and MLX would not raise on them.
+            return self.table[y.astype(mx.int32)]
+        return _linear(y[:, None], self.weight, self.bias)
+
+
 class ICLBlock:
     """The in-context stack: context rows are keys/values, every row is a query."""
 
     def __init__(self, w: dict, prefix: str, num_layers: int = 24, num_heads: int = 16,
                  head_dim: int = 64, kv_heads_for_query: int | None = 2):
-        self.y_lin = w[f"{prefix}.y_lin.weight"]
-        self.y_bias = w.get(f"{prefix}.y_lin.bias")
+        self.label = LabelEmbedding(w, prefix)
         self.layers = [Block(w, f"{prefix}.layers.{i}", num_heads, head_dim)
                        for i in range(num_layers)]
         self.norm = w[f"{prefix}.norm.weight"]
@@ -165,10 +197,14 @@ class ICLBlock:
         self.hw2, self.hb2 = w[f"{prefix}.head.2.weight"], w[f"{prefix}.head.2.bias"]
         self.kv_heads = kv_heads_for_query
 
+    @property
+    def num_outputs(self) -> int:
+        """999 quantiles for the regressor, 10 class logits for the classifier."""
+        return self.hw2.shape[0]
+
     def __call__(self, x: mx.array, y: mx.array) -> mx.array:
         n_train = y.shape[-1]
-        y_emb = _linear(y[:, None], self.y_lin, self.y_bias)
-        x = mx.concatenate([x[:n_train] + y_emb, x[n_train:]], axis=0)
+        x = mx.concatenate([x[:n_train] + self.label(y).astype(x.dtype), x[n_train:]], axis=0)
 
         for i, layer in enumerate(self.layers):
             last = i == len(self.layers) - 1
@@ -308,9 +344,8 @@ class RowEmbedding:
         self.nw, self.nb = w[f"{prefix}.cell_embedding.num_lin.weight"], w[f"{prefix}.cell_embedding.num_lin.bias"]
         self.cw, self.cb = w[f"{prefix}.cell_embedding.cat_lin.weight"], w[f"{prefix}.cell_embedding.cat_lin.bias"]
         self.nan_w = w[f"{prefix}.cell_embedding.nan_lin.weight"]
-        self.y_lin = w[f"{prefix}.y_lin.weight"]
-        self.y_bias = w.get(f"{prefix}.y_lin.bias")
-        self.col = [ColBlock(w, f"{prefix}.col_blocks.{i}") for i in range(num_layers)]
+        self.label = LabelEmbedding(w, prefix)
+        self.col =[ColBlock(w, f"{prefix}.col_blocks.{i}") for i in range(num_layers)]
         self.row = [RowBlock(w, f"{prefix}.row_blocks.{i}", 4, 64, rope=True, gated=True)
                     for i in range(num_layers)]
         self.norm = w[f"{prefix}.norm.weight"]
@@ -344,7 +379,7 @@ class RowEmbedding:
         n_train = y.shape[-1]
         k = self.readout.shape[-2]
         cells = self.cells(x, categorical, n_train)                   # [R, C, D]
-        y_emb = _linear(y[:, None], self.y_lin, self.y_bias)[:, None, :]
+        y_emb = self.label(y).astype(cells.dtype)[:, None, :]         # one vector per context row
         cells = mx.concatenate([cells[:n_train] + y_emb, cells[n_train:]], axis=0)
 
         h = mx.swapaxes(cells, -3, -2)                                # [C, R, D]
